@@ -1,4 +1,5 @@
 import { getAllMovies, addMovie } from "../services/movieService.js";
+import { producer } from "../services/kafkaClient.js";
 
 /* ------------------- GET request to retrieve all movies ------------------- */
 export async function getMovies(req, res) {
@@ -21,6 +22,16 @@ export async function createMovie(req, res) {
 
   try {
     const newMovie = await addMovie({ title, rating });
+
+    // Publish a message to Kafka
+    await producer.send({
+      topic: "movie-created",
+      messages: [
+        {
+          value: JSON.stringify(newMovie.title),
+        },
+      ],
+    });
 
     return res.status(201).json(newMovie);
   } catch (error) {
